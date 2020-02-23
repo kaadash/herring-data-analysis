@@ -9,18 +9,23 @@ output:
       collapsed: true
     df_print: paged
 ---
+# 0. Podsumowanie
+
+Na podstawie zebranych danych widać zdecydowaną tendencję do karłowacenia śledzi. Najwyzsza korelacja występuje między długością śledzi, a temperaturą przy powierzchni wody. Drugą wartość pod względem korelacji miała oscylacja północnoatlantycka, która jest mocno związana z temperaturą. Ponadto parametr temperatury przy powierzchni miał najwyższą wartość ważności. Świadczy to o tym, że zmiany klimatyczne mają największy wpływ na rozmiar śledzi.
+
 
 # 1. Kod wyliczający wykorzystane biblioteki.
 
 ```{r, message = FALSE}
-library(knitr)
-library(dplyr)
-library(ggplot2)
-library(plotly)
-library(caret)
-library(randomForest)
-library(corrplot)
+library(knitr) #prezentacja wyników
+library(dplyr) #data frame
+library(ggplot2) #wizualizacja
+library(plotly) #interaktywne wykresy
+library(caret) #regresja
+library(randomForest) #random forest
+library(corrplot) # wykres korelacji
 ```
+
 
 # 2. Powtarzalność wyników
 ```{r}
@@ -37,11 +42,14 @@ str(rawCSV)
 
 # 4. Kod przetwarzający brakujące dane
 
+Usunięcie elementów, które zawierają niepełne dane (NA)
+
 ```{r}
 completeRows <- rawCSV[complete.cases(rawCSV), ]
 ```
 
 ### liczba wierszy przed filtrowaniem
+
 
 ```{r}
 allRowsNumber <- nrow(rawCSV)
@@ -49,11 +57,19 @@ allRowsNumber
 ```
 
 
-### liczba wierszy po filtrowaniu
+### Pomiary posiadające niepełne dane:
 
 ```{r}
-nrow(completeRows)
+allRowsNumber - nrow(completeRows)
 ```
+
+### Procent niepełnych danych:
+```{r}
+(allRowsNumber - nrow(completeRows)) / allRowsNumber
+```
+
+Około 20% procent danych nie posiadało pełnej informacji. Te dane były równo rozłożone w całym zbiorze danych, co pozowliło mi zadecydować, żeby je usunąć.
+
 
 # 5. Sekcja podsumowującą rozmiar zbioru i podstawowe statystyki.
 
@@ -160,14 +176,16 @@ corData <- cor(completeRows)
 corrplot(corData, method = "number", type = "upper")
 ```
 
+Korelacja interesuje nas w analizie jedynie związana z długością śledzia. Z wykresu wynika, że zdecydowanie największą bezwzględną korelację posiada długość śledzia z temperaturą powierzchniową wody. Wynosi ona -0.45. Druga co do wartości korelacji jest wartość parametru oscylacji północnoatlantyckiej. Jest ona dość mocno skorelowana też z temperaturą powierzchni wody. Z tej analizy wynika, że klimat ma duży wpływ na rozmiar śledzi.
+
 # 8. Rozmiar śledzi w czasie
 
 ## 8.1 rozmiar w miesiącach
 ```{r}
 month_length <- group_by(completeRows, xmonth) %>%
-  summarize(month_length = mean(length))
+  summarize(avg_length = mean(length))
 
-plot <- ggplot(month_length, aes(x=xmonth, y=month_length)) +
+plot <- ggplot(month_length, aes(x=xmonth, y=avg_length)) +
   geom_line() +
   geom_point() +
   geom_smooth()
@@ -190,6 +208,10 @@ plot <- ggplot(year_group, aes(x=rok, y=avg_length))+
   geom_smooth()
 ggplotly(plot)
 ```
+
+Analizując wykres rozmiarów śledzia w latach widać tendencję do ich karłowacenia. W analizie miesięcznej można zauważyć, że śledzie najwieksze rozmiary osiagaja w okolicach czerwca.
+
+
 
 # 9. Budowa regresora
 ```{r}
@@ -226,6 +248,4 @@ varImp(fit)
 ggplot(varImp(fit))
 ```
 
-# 11. Podsumowanie
-
-Najwyzsza korelacja występuje między długością śledzi, a temperaturą przy powierzchni wody. Ponadto parametr temperatury przy powierzchni miał drugą najwyższą wartość ważności. Świadczy to o tym, że zmiany klimatyczne mają największy wpływ na ich rozmiar.
+Zdecydowanie największą wartość ważności posiada temperatura powierzchniowa wody i jest większa od kolejnej wartości ponad 4-krotnie, co pokazuje, zdecydowanie, że jest to najważniejszy parametr.
