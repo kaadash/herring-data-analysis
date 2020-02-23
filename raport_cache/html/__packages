@@ -1,0 +1,9 @@
+base
+knitr
+dplyr
+ggplot2
+plotly
+lattice
+caret
+randomForest
+corrplot

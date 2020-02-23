@@ -1,0 +1,231 @@
+---
+title: "Śledzie"
+author: "Artur Kudeł"
+always_allow_html: yes
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: true
+    df_print: paged
+---
+
+# 1. Kod wyliczający wykorzystane biblioteki.
+
+```{r, message = FALSE, cache=TRUE, cache.lazy=FALSE}
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(caret)
+library(randomForest)
+library(corrplot)
+```
+
+# 2. Powtarzalność wyników
+```{r, cache=TRUE, cache.lazy=FALSE}
+set.seed(23)
+```
+
+
+# 3. Wczytanie danych z pliku
+```{r loadData, cache=TRUE, cache.lazy=FALSE}
+
+rawCSV <- read.csv("~/Downloads/sledzie.csv", na.strings = "?")
+str(rawCSV)
+```
+
+# 4. Kod przetwarzający brakujące dane
+
+```{r, cache=TRUE, cache.lazy=FALSE}
+completeRows <- rawCSV[complete.cases(rawCSV), ]
+```
+
+### liczba wierszy przed filtrowaniem
+
+```{r, cache=TRUE, cache.lazy=FALSE}
+allRowsNumber <- nrow(rawCSV)
+allRowsNumber
+```
+
+
+### liczba wierszy po filtrowaniu
+
+```{r, cache=TRUE, cache.lazy=FALSE}
+nrow(completeRows)
+```
+
+# 5. Sekcja podsumowującą rozmiar zbioru i podstawowe statystyki.
+
+Krótkie podsumowanie statystyk wartości atrybutów:
+
+```{r summary, cache=TRUE, cache.lazy=FALSE}
+summary(completeRows[-1])
+```
+
+# 6. Rozkład wartości atrybutów
+
+### length: długość złowionego śledzia [cm];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = length)) + geom_histogram(fill="blue", color="black", binwidth = 1)
+```
+
+### cfin1: dostępność planktonu [zagęszczenie Calanus finmarchicus gat. 1];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = cfin1)) + geom_histogram(fill="blue", color="black", binwidth = 1)
+
+```
+
+### cfin2: dostępność planktonu [zagęszczenie Calanus finmarchicus gat. 2];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = cfin2)) + geom_histogram(fill="blue", color="black", binwidth = 1)
+
+```
+
+### chel1: dostępność planktonu [zagęszczenie Calanus helgolandicus gat. 1];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = chel1)) + geom_histogram(fill="blue", color="black", binwidth = 1)
+
+```
+
+### chel2: dostępność planktonu [zagęszczenie Calanus helgolandicus gat. 2];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = chel2)) + geom_histogram(fill="blue", color="black", binwidth = 1)
+
+```
+
+### lcop1: dostępność planktonu [zagęszczenie widłonogów gat. 1];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = lcop1)) + geom_histogram(fill="blue", color="black", binwidth = 1)
+
+```
+
+### lcop2: dostępność planktonu [zagęszczenie widłonogów gat. 2];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = lcop2)) + geom_histogram(fill="blue", color="black", binwidth = 1)
+
+```
+
+### fbar: natężenie połowów w regionie [ułamek pozostawionego narybku];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = fbar)) + geom_histogram(fill="blue", color="black", binwidth = .01)
+
+```
+
+### recr: roczny narybek [liczba śledzi];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = recr)) + geom_histogram(fill="blue", color="black", binwidth = 25000)
+
+```
+
+### cumf: łączne roczne natężenie połowów w regionie [ułamek pozostawionego narybku];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = cumf)) + geom_histogram(fill="blue", color="black", binwidth = .01)
+
+```
+
+### totaln: łączna liczba ryb złowionych w ramach połowu [liczba śledzi];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = totaln)) + geom_histogram(fill="blue", color="black", binwidth = 10000)
+
+```
+
+### sst: temperatura przy powierzchni wody [°C];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = sst)) + geom_histogram(fill="blue", color="black", binwidth = 0.05)
+
+```
+
+### sal: poziom zasolenia wody [Knudsen ppt];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = sal)) + geom_histogram(fill="blue", color="black", binwidth = 0.01)
+
+```
+
+### xmonth: miesiąc połowu [numer miesiąca];
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = xmonth)) + geom_histogram(fill="blue", color="black", binwidth = 1)
+
+```
+
+### nao: oscylacja północnoatlantycka [mb].
+```{r, cache=TRUE, cache.lazy=FALSE}
+ggplot(completeRows, mapping = aes(x = nao)) + geom_histogram(fill="blue", color="black", binwidth = 1)
+
+```
+
+# 7. Korelacja między zmiennymi
+```{r, cache=TRUE, cache.lazy=FALSE}
+corData <- cor(completeRows)
+corrplot(corData, method = "number", type = "upper")
+```
+
+# 8. Rozmiar śledzi w czasie
+
+## 8.1 rozmiar w miesiącach
+```{r, cache=TRUE, cache.lazy=FALSE}
+month_length <- group_by(completeRows, xmonth) %>%
+  summarize(month_length = mean(length))
+
+plot <- ggplot(month_length, aes(x=xmonth, y=month_length)) +
+  geom_line() +
+  geom_point() +
+  geom_smooth()
+ggplotly(plot)
+```
+
+
+## 8.2 rozmiar w latach
+```{r, cache=TRUE, cache.lazy=FALSE}
+year_group <- completeRows %>%
+  group_by(recr, add=TRUE) %>%
+  summarise(avg_length = mean(length)) %>%
+  arrange(row_number()) %>%
+  mutate(rok=row_number())
+
+year_group
+plot <- ggplot(year_group, aes(x=rok, y=avg_length))+
+  geom_line() +
+  geom_point() +
+  geom_smooth()
+ggplotly(plot)
+```
+
+# 9. Budowa regresora
+```{r, cache=TRUE, cache.lazy=FALSE}
+cleaned_data_for_training = select(.data = completeRows, -X)
+idx <- createDataPartition(cleaned_data_for_training$length, p=0.7, list=F)
+training <- cleaned_data_for_training[idx,]
+testing <- cleaned_data_for_training[-idx,]
+
+ctrl <- trainControl(
+  method = "repeatedcv",
+  number = 2,
+  repeats = 5)
+
+tunegrid <- expand.grid(mtry = 10:14)
+
+
+fit <- train(length ~ .,
+             data = training,
+             method = "rf",
+             metric = "RMSE",
+             tuneGrid=tunegrid,
+             trControl = ctrl,
+             ntree = 15)
+
+
+rfClasses <- predict(fit, newdata = testing)
+data_to_summary <- data.frame(obs = testing$length, pred = rfClasses)
+defaultSummary(data_to_summary)
+```
+
+# 10. Analiza ważności atrybutów modelu regresji
+```{r, cache=TRUE, cache.lazy=FALSE}
+varImp(fit)
+ggplot(varImp(fit))
+```
+
+# 11. Podsumowanie
+
+Najwyzsza korelacja występuje między długością śledzi, a temperaturą przy powierzchni wody. Ponadto parametr temperatury przy powierzchni miał drugą najwyższą wartość ważności. Świadczy to o tym, że zmiany klimatyczne mają największy wpływ na ich rozmiar.
