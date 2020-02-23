@@ -1,6 +1,7 @@
 ---
 title: "Śledzie"
 author: "Artur Kudeł"
+date: "23.02.2020"
 always_allow_html: yes
 output: 
   html_document:
@@ -173,10 +174,10 @@ ggplot(completeRows, mapping = aes(x = nao)) + geom_histogram(fill="blue", color
 # 7. Korelacja między zmiennymi
 ```{r}
 corData <- cor(completeRows)
-corrplot(corData, method = "number", type = "upper")
+corrplot(corData, method = "number", type = "upper", order="AOE", addCoefasPercent = TRUE)
 ```
 
-Korelacja interesuje nas w analizie jedynie związana z długością śledzia. Z wykresu wynika, że zdecydowanie największą bezwzględną korelację posiada długość śledzia z temperaturą powierzchniową wody. Wynosi ona -0.45. Druga co do wartości korelacji jest wartość parametru oscylacji północnoatlantyckiej. Jest ona dość mocno skorelowana też z temperaturą powierzchni wody. Z tej analizy wynika, że klimat ma duży wpływ na rozmiar śledzi.
+Wartość korelacji interesuje nas głównie pomiędzy długością śledzia, a innymi zebranymi parametrami. Z wykresu wynika, że zdecydowanie największą bezwzględną korelację posiada długość śledzia z temperaturą powierzchniową wody. Wynosi ona -0.45. Druga co do wartości korelacji jest wartość parametru oscylacji północnoatlantyckiej. Jest ona dość mocno skorelowana też z temperaturą powierzchni wody. Z tej analizy wynika, że klimat ma duży wpływ na rozmiar śledzi.
 
 # 8. Rozmiar śledzi w czasie
 
@@ -214,6 +215,9 @@ Analizując wykres rozmiarów śledzia w latach widać tendencję do ich karłow
 
 
 # 9. Budowa regresora
+
+Zbiór treningowy i zbiór testowy został podzielony w proporcjach 70/30. Do funkcji uczącej został wykorzystany algorytm RandomForest i jako metryka RMSE.
+
 ```{r}
 cleaned_data_for_training = select(.data = completeRows, -X)
 idx <- createDataPartition(cleaned_data_for_training$length, p=0.7, list=F)
